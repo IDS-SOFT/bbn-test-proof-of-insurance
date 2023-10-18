@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
 /* This is a comprehensive smart contract template for :
 1. Reinsurance
@@ -13,19 +12,22 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 */
 
 // Reinsurance contract
-contract ReinsuranceContract is Ownable{
+contract ReinsuranceContract {
+    address owner;
+
     address public insurer;
     address public reinsurer;
     uint256 public reinsuranceAmount;
     bool public accepted;
     
     event ReinsuranceAccepted();
-    event CheckBalance(string text, uint amount);
+    event CheckBalance(uint amount);
 
     constructor(address _insurer, address _reinsurer, uint256 _reinsuranceAmount) {
         insurer = _insurer;
         reinsurer = _reinsurer;
         reinsuranceAmount = _reinsuranceAmount;
+        owner = msg.sender;
     }
 
     // The reinsurer accepts the reinsurance
@@ -36,17 +38,16 @@ contract ReinsuranceContract is Ownable{
     }
     
     function getBalance(address user_account) external returns (uint){
-    
-       string memory data = "User Balance is : ";
        uint user_bal = user_account.balance;
-       emit CheckBalance(data, user_bal );
+       emit CheckBalance(user_bal);
        return (user_bal);
-
     }
 }
 
 // Parametric insurance contract
-contract ParametricInsuranceContract is Ownable {
+contract ParametricInsuranceContract {
+    address owner;
+
     IERC20 public premiumToken; // Token for premium payments
     uint256 public premiumAmount;
     uint256 public payoutAmount;
@@ -56,13 +57,14 @@ contract ParametricInsuranceContract is Ownable {
     //address public policyholder;
 
     event InsuranceClaimed(address indexed policyholder, uint256 amount);
-    event CheckBalance(string text, uint amount);
+    event CheckBalance(uint amount);
 
     constructor(address _premiumToken, uint256 _premiumAmount, uint256 _payoutAmount, uint256 _expirationTime) {
         premiumToken = IERC20(_premiumToken);
         premiumAmount = _premiumAmount;
         payoutAmount = _payoutAmount;
         expirationTime = _expirationTime;
+        owner = msg.sender;
     }
 
     // Purchase insurance policy
@@ -74,26 +76,27 @@ contract ParametricInsuranceContract is Ownable {
 
     // Claim insurance payout
     function claimInsurance(address policyholder) external {
+        require(policyholder != address(0), "Invalid policyholder address");
         require(block.timestamp < expirationTime, "Insurance policy has expired");
         require(!claimed, "Insurance policy has already been claimed");
         require(msg.sender == owner() || msg.sender == policyholder, "Only the policyholder or contract owner can claim");
         require(premiumToken.transfer(owner(), payoutAmount), "Payout failed");
+
         claimed = true;
         emit InsuranceClaimed(msg.sender, payoutAmount);
     }
 
     function getBalance(address user_account) external returns (uint){
-    
-       string memory data = "User Balance is : ";
        uint user_bal = user_account.balance;
-       emit CheckBalance(data, user_bal );
+       emit CheckBalance(user_bal);
        return (user_bal);
-
     }
 }
 
 // Risk pooling contract
-contract RiskPoolingContract is Ownable {
+contract RiskPoolingContract {
+    address owner;
+
     IERC20 public reserveToken; // Token for pool reserves
     uint256 public totalReserveAmount;
     uint256 public totalPayouts;
@@ -103,10 +106,11 @@ contract RiskPoolingContract is Ownable {
     mapping(address => uint256) public payouts;
 
     event ContributionAdded(address indexed contributor, uint256 amount);
-    event CheckBalance(string text, uint amount);
+    event CheckBalance(uint amount);
 
     constructor(address _reserveToken) {
         reserveToken = IERC20(_reserveToken);
+        owner = msg.sender;
     }
 
     // Add contribution to the risk pool
@@ -132,11 +136,8 @@ contract RiskPoolingContract is Ownable {
     }
 
     function getBalance(address user_account) external returns (uint){
-    
-       string memory data = "User Balance is : ";
        uint user_bal = user_account.balance;
-       emit CheckBalance(data, user_bal );
+       emit CheckBalance(user_bal);
        return (user_bal);
-
     }
 }
